@@ -19,12 +19,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Servidor HTTP robusto e thread-safe alimentado por Virtual Threads (Project Loom).
  * Gerencia o ciclo de vida do ServerSocket de forma sincronizada com suporte a Graceful Shutdown.
  */
 public class Server implements HttpServer {
+
+    private static final Logger LOGGER = Logger.getLogger(Server.class.getName());
 
     private final Router router;
     private ServerSocket serverSocket;
@@ -54,7 +58,7 @@ public class Server implements HttpServer {
             this.serverSocket = new ServerSocket(port);
             this.running = true;
 
-            System.out.println("Servidor FastAPI-Java iniciado com Virtual Threads na porta " + port + "...");
+            LOGGER.info("Servidor FastAPI-Java iniciado com Virtual Threads na porta " + port + "...");
 
             // Loop de accept rodando de forma assíncrona sob uma Virtual Thread dedicada
             Thread.ofVirtual().name("http-accept-loop").start(() -> {
@@ -80,14 +84,14 @@ public class Server implements HttpServer {
                         }
                     } catch (IOException e) {
                         if (running) {
-                            System.err.println("Erro ao aceitar nova conexão: " + e.getMessage());
+                            LOGGER.log(Level.SEVERE, "Erro ao aceitar nova conexão", e);
                         }
                     }
                 }
             });
 
         } catch (IOException e) {
-            System.err.println("Falha fatal ao inicializar o servidor HTTP: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Falha fatal ao inicializar o servidor HTTP", e);
             stop();
         } finally {
             lifecycleLock.unlock();
@@ -103,14 +107,14 @@ public class Server implements HttpServer {
             }
             this.running = false;
             
-            System.out.println("Iniciando desligamento gracioso do servidor...");
+            LOGGER.info("Iniciando desligamento gracioso do servidor...");
 
             // 1. Fecha o ServerSocket para parar de aceitar novas conexões
             if (serverSocket != null && !serverSocket.isClosed()) {
                 try {
                     serverSocket.close();
                 } catch (IOException e) {
-                    System.err.println("Erro ao fechar o ServerSocket: " + e.getMessage());
+                    LOGGER.log(Level.SEVERE, "Erro ao fechar o ServerSocket", e);
                 }
             }
 
@@ -120,7 +124,7 @@ public class Server implements HttpServer {
                 try {
                     // Aguarda até 10 segundos para a finalização das tarefas pendentes
                     if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-                        System.err.println("Algumas requisições não terminaram a tempo. Forçando desligamento...");
+                        LOGGER.warning("Algumas requisições não terminaram a tempo. Forçando desligamento...");
                         executor.shutdownNow();
                     }
                 } catch (InterruptedException e) {
@@ -129,7 +133,7 @@ public class Server implements HttpServer {
                 }
             }
 
-            System.out.println("Servidor HTTP finalizado com sucesso.");
+            LOGGER.info("Servidor HTTP finalizado com sucesso.");
         } finally {
             terminationLatch.countDown();
             lifecycleLock.unlock();
@@ -154,8 +158,8 @@ public class Server implements HttpServer {
             try {
                 request = HttpParser.parse(clientSocket.getInputStream());
             } catch (Exception e) {
-                // Loga internamente o erro de parser, mas não vaza e.getMessage() para o cliente
-                System.err.println("Erro de parsing HTTP: " + e.getMessage());
+                // Loga internamente o erro de parser, mas não vaza a stack trace para o cliente
+                LOGGER.log(Level.SEVERE, "Erro de parsing HTTP", e);
                 writeResponse(out, Responses.builder().status(400).body("Bad Request").build());
                 return;
             }
@@ -165,7 +169,7 @@ public class Server implements HttpServer {
             try {
                 response = router.resolve(request);
             } catch (Exception e) {
-                System.err.println("Erro na execução do RequestHandler: " + e.getMessage());
+                LOGGER.log(Level.SEVERE, "Erro na execução do RequestHandler", e);
                 response = Responses.builder().status(500).body("Internal Server Error").build();
             }
 
@@ -173,7 +177,7 @@ public class Server implements HttpServer {
             writeResponse(out, response);
 
         } catch (IOException e) {
-            System.err.println("Erro de comunicação de rede com o cliente: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Erro de comunicação de rede com o cliente", e);
         }
     }
 

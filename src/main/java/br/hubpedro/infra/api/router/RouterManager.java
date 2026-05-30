@@ -8,6 +8,7 @@ import br.hubpedro.contracts.annotations.Get;
 import br.hubpedro.contracts.annotations.Post;
 
 import java.lang.reflect.Method;
+import java.util.logging.Logger;
 
 /**
  * Gerenciador de rotas que implementa a interface {@link Router}.
@@ -15,6 +16,8 @@ import java.lang.reflect.Method;
  * de controladores anotados com {@link Get} e {@link Post} usando reflexão.
  */
 public class RouterManager implements Router {
+
+    private static final Logger LOGGER = Logger.getLogger(RouterManager.class.getName());
 
     private final Router delegate;
 
@@ -64,12 +67,12 @@ public class RouterManager implements Router {
                 Get getAnn = method.getAnnotation(Get.class);
                 String path = getAnn.value();
                 addRoute("GET", path, new ReflectionMethodHandler(controller, method));
-                System.out.println("Controlador registrado [GET]: " + path + " -> " + clazz.getSimpleName() + "." + method.getName());
+                LOGGER.info("Controlador registrado [GET]: " + path + " -> " + clazz.getSimpleName() + "." + method.getName());
             } else if (method.isAnnotationPresent(Post.class)) {
                 Post postAnn = method.getAnnotation(Post.class);
                 String path = postAnn.value();
                 addRoute("POST", path, new ReflectionMethodHandler(controller, method));
-                System.out.println("Controlador registrado [POST]: " + path + " -> " + clazz.getSimpleName() + "." + method.getName());
+                LOGGER.info("Controlador registrado [POST]: " + path + " -> " + clazz.getSimpleName() + "." + method.getName());
             }
         }
     }
