@@ -5,10 +5,6 @@ import br.hubpedro.contracts.Router;
 import br.hubpedro.infra.api.router.ControllerScanner;
 import br.hubpedro.infra.api.router.DefaultRouter;
 
-/**
- * Fachada principal pública do framework FastAPI-Java.
- * Permite instanciar servidores e roteadores sem expor pacotes internos de infraestrutura.
- */
 public final class FastApi {
 
     private FastApi() {
