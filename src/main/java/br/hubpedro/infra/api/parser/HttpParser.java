@@ -22,6 +22,35 @@ public class HttpParser {
     private static final int MAX_HEADER_SIZE = 8192; // Limite de 8KB para cabeçalhos (Prevenção DoS)
     private static final int MAX_BODY_SIZE = 10 * 1024 * 1024; // Limite de 10MB para corpo (Prevenção DoS)
 
+    private static String[] splitLines(String text) {
+        if (text.isEmpty()) {
+            return new String[]{""};
+        }
+        java.util.List<String> list = new java.util.ArrayList<>();
+        int start = 0;
+        int len = text.length();
+        while (start <= len) {
+            int idx = text.indexOf('\n', start);
+            if (idx == -1) {
+                list.add(text.substring(start));
+                break;
+            }
+            int end = idx;
+            if (idx > start && text.charAt(idx - 1) == '\r') {
+                end = idx - 1;
+            }
+            list.add(text.substring(start, end));
+            start = idx + 1;
+        }
+
+        int resultSize = list.size();
+        while (resultSize > 0 && list.get(resultSize - 1).isEmpty()) {
+            resultSize--;
+        }
+
+        return list.subList(0, resultSize).toArray(new String[0]);
+    }
+
     /**
      * Faz o parsing da requisição HTTP vinda do cliente a partir do fluxo de bytes
      * brutos.
@@ -34,7 +63,7 @@ public class HttpParser {
     public static HttpRequest parse(InputStream inputStream) throws IOException {
         // 1. Ler os cabeçalhos de forma segura usando o leitor dedicado de bytes
         String headersText = HttpHeaderReader.readHeaders(inputStream, MAX_HEADER_SIZE);
-        String[] lines = headersText.split("\\r?\\n");
+        String[] lines = splitLines(headersText);
 
         if (lines.length == 0 || lines[0].isBlank()) {
             throw new IOException("Request Line inválida.");
