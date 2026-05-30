@@ -8,6 +8,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Utilitário responsável por fazer o parsing de um InputStream de socket HTTP
@@ -22,6 +23,9 @@ public class HttpParser {
     private static final int MAX_HEADER_SIZE = 8192; // Limite de 8KB para cabeçalhos (Prevenção DoS)
     private static final int MAX_BODY_SIZE = 10 * 1024 * 1024; // Limite de 10MB para corpo (Prevenção DoS)
 
+    private static final Pattern NEWLINE_PATTERN = Pattern.compile("\\r?\\n");
+    private static final Pattern SPACE_PATTERN = Pattern.compile("\\s+");
+
     /**
      * Faz o parsing da requisição HTTP vinda do cliente a partir do fluxo de bytes
      * brutos.
@@ -34,7 +38,7 @@ public class HttpParser {
     public static HttpRequest parse(InputStream inputStream) throws IOException {
         // 1. Ler os cabeçalhos de forma segura usando o leitor dedicado de bytes
         String headersText = HttpHeaderReader.readHeaders(inputStream, MAX_HEADER_SIZE);
-        String[] lines = headersText.split("\\r?\\n");
+        String[] lines = NEWLINE_PATTERN.split(headersText);
 
         if (lines.length == 0 || lines[0].isBlank()) {
             throw new IOException("Request Line inválida.");
@@ -42,7 +46,7 @@ public class HttpParser {
 
         // 2. Parsear a Request Line (Ex: GET /items/5?q=teste HTTP/1.1)
         String requestLine = lines[0];
-        String[] parts = requestLine.split("\\s+");
+        String[] parts = SPACE_PATTERN.split(requestLine);
         if (parts.length < 3) {
             throw new IOException("Request Line malformatada: " + requestLine);
         }
