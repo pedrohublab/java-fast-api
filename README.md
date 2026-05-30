@@ -1,99 +1,204 @@
 # 🚀 FastAPI-like Java Framework (Loom Sandbox)
 
-> **"E se a ergonomia e simplicidade do FastAPI do Python existissem no ecossistema Java moderno, sem a complexidade pesada do Spring ou Jakarta EE?"**
+> **"E se a simplicidade e a ergonomia declarativa do FastAPI (Python) fossem unidas com a robustez de tipos do Java 21 moderno e o poder de escalabilidade das Virtual Threads?"**
 
-Este projeto é uma biblioteca Java extremamente elegante, inspirada diretamente na ergonomia minimalista e declarativa do **FastAPI**, mas construída de forma puramente idiomática para o **Java 21+**, aproveitando o poder das **Virtual Threads (Project Loom)** sob um servidor HTTP nativo construído do zero com sockets de alta performance.
-
----
-
-## 🎨 O Que Torna Este Projeto Incrível?
-
-1. **Ergonomia Minimalista e Pública**: Esqueça anotações complexas, reflexão pesada e XMLs. Todo o runtime interno de infraestrutura (`infra`) está completamente encapsulado. Você interage apenas com a fachada pública super limpa `FastApi` e o criador de respostas imutáveis `Responses`.
-2. **Project Loom & Virtual Threads**: Cada conexão de cliente é recebida por um accept-loop assíncrono e imediatamente despachada como uma tarefa em um executor de Virtual Threads (`Executors.newVirtualThreadPerTaskExecutor()`). Zero bloqueio de Threads do S.O.!
-3. **Desligamento Gracioso (Graceful Shutdown)**: O servidor implementa proteção avançada de ciclo de vida com locks de reentrada e um mecanismo de desligamento gracioso que aguarda as requisições em andamento por até 10 segundos antes de liberar as portas do sistema operacional de forma limpa.
-4. **Respostas 100% Imutáveis**: O contrato `contracts.HttpResponse` é totalmente imutável, garantindo segurança sob concorrência e prevenindo mutações de estado pós-construção dos cabeçalhos e payloads. Cabeçalhos de segurança essenciais (`X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`) são injetados automaticamente.
-5. **Roteamento Inteligente com Especificidade**:
-   - **Sem Sombreamento de Rotas**: Um sistema de ordenação automática baseado na especificidade dos segmentos garante que rotas estáticas exatas (ex: `/items/search`) sejam resolvidas prioritariamente em relação a rotas dinâmicas genéricas (ex: `/items/{id}`), independente da ordem em que foram registradas!
-   - **Tratamento de 405 Method Not Allowed**: Se um caminho for solicitado com um método HTTP não suportado (ex: `POST` em `/users` quando há apenas `GET`), o roteador devolve `405` populando o cabeçalho `Allow` de forma automática e padrão.
-   - **Escape Seguro de Regex**: Caracteres especiais em caminhos estáticos como `.` ou `+` são escapados automaticamente no mapeamento regex interno para evitar falsos positivos de casamento de rotas.
-6. **Parser HTTP Resiliente (UTF-8 sem Travamentos)**:
-   - Leituras de corpos (`body`) e cabeçalhos baseadas estritamente em **fluxo de bytes brutos** e não em buffers de caracteres.
-   - Trata acentos e emojis 🚀 de forma perfeita contando os bytes exatos anunciados pelo `Content-Length`, eliminando de vez hangs por leituras parciais e travamento de conexões.
-   - Limites integrados de proteção contra Denial of Service (DoS): Cabeçalhos de no máximo 8KB e corpo de requisição limitado a 10MB.
+Este projeto é uma biblioteca Java inovadora, inspirada diretamente na ergonomia minimalista e produtiva do **FastAPI**, mas construída de forma puramente idiomática para o **Java 21+**. Sob o capô, ela traz um servidor HTTP nativo baseado em sockets de alta performance, alimentado pelas **Virtual Threads (Project Loom)**, além de um roteador avançado e um mecanismo reflexivo de controladores anotados extremamente expressivo.
 
 ---
 
-## ⚡ Exemplo de Código (`Main.java`)
+## 🧭 Princípios de Design e Arquitetura
 
-Veja como a escrita de uma API HTTP em Java ficou simples, limpa e extremamente similar à experiência do FastAPI no Python:
+O framework foi projetado seguindo diretrizes rígidas de separação de conceitos, ergonomia e segurança concorrente:
+
+* **Contratos Públicos Limpos**: Toda a complexidade de rede, parsing de bytes e reflexão é mantida estritamente dentro do pacote `infra`. O usuário final interage apenas com interfaces em `contracts` e fachadas públicas como [FastApi](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/infra/api/FastApi.java) e `Responses`.
+* **Segurança Concorrente (Thread-Safety)**: O roteador e os manipuladores de requisições são thread-safe por padrão. Os objetos de requisição e resposta são 100% imutáveis, garantindo que o estado não seja corrompido em cenários de altíssima concorrência.
+* **Leve e Sem Dependências Externas**: Zero Spring Boot, zero Jakarta EE, zero Quarkus. Rodando inteiramente com bibliotecas padrão do Java 21+.
+
+---
+
+## 🎨 Principais Recursos
+
+### 1. Project Loom & Servidor de Alta Performance
+Cada conexão HTTP de cliente é capturada por uma thread aceitadora assíncrona dedicada e despachada instantaneamente para um executor de Virtual Threads ([Executors.newVirtualThreadPerTaskExecutor()](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/infra/api/Server.java#L53)).
+* **Sem Bloqueio de Threads de S.O.**: Operações de entrada/saída (I/O) de rede bloqueiam apenas a Virtual Thread corrente, liberando a thread portadora física para processar outras requisições.
+* **Graceful Shutdown**: Mecanismo que interrompe o recebimento de novas conexões, mas concede até **10 segundos** para que requisições ativas sejam finalizadas e persistidas de forma segura.
+
+### 2. Roteamento Inteligente e Livre de Conflitos
+Implementado por [DefaultRouter](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/infra/api/router/DefaultRouter.java), o sistema de roteamento traz recursos maduros de servidores enterprise:
+* **Ordenação Segment-by-Segment**: Assegura que rotas estáticas exatas (ex: `/items/search`) sejam priorizadas em relação a rotas dinâmicas genéricas (ex: `/items/{id}`), eliminando bugs comuns de sombreamento, independentemente da ordem em que foram registradas.
+* **Escape Seguro de Caracteres**: Símbolos reservados da Regex em caminhos estáticos são escapados automaticamente.
+* **Tratamento do Erro 405 (Method Not Allowed)**: Se um recurso existir mas for requisitado via um método HTTP não suportado, o roteador responde automaticamente com status `405` e insere o cabeçalho `Allow` contendo os verbos aceitos.
+
+### 3. Parser HTTP Resiliente e Proteção DoS
+O [HttpParser](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/infra/api/parser/HttpParser.java) trabalha a nível de bytes, permitindo:
+* Suporte completo e perfeito a codificações de texto acentuado e Emojis 🚀 sem travamento de requisições.
+* Limites rígidos integrados contra ataques DoS: tamanho máximo de cabeçalho limitado a **8 KB** e corpo limitado a **10 MB**.
+
+### 4. Dois Modelos de Programação: Funcional e Declarativo
+Você pode escolher a forma como deseja declarar suas APIs:
+* **Modelo Funcional (Lambdas)**: Rápido, leve e direto.
+* **Modelo Declarativo (Controladores Anotados)**: Ergonomia no estilo FastAPI, com anotações intuitivas, escaneamento reflexivo automático e conversão implícita de tipos.
+
+---
+
+## 📊 Arquitetura de Fluxo do Sistema
+
+Abaixo é possível visualizar a jornada de uma requisição HTTP, desde o recebimento da conexão até a execução dos Handlers:
+
+### Fluxo de Conexão e Processamento de Requisições
+```mermaid
+graph TD
+    Client[Cliente HTTP] -->|Socket TCP| Server[br.hubpedro.infra.api.Server]
+    Server -->|Despacha no Executor| Loom[Virtual Thread - Loom]
+    Loom -->|Parsing de Byte Stream| HttpParser[br.hubpedro.infra.api.parser.HttpParser]
+    HttpParser -->|Instancia| ReqDTO[br.hubpedro.infra.api.dto.HttpRequest]
+    ReqDTO -->|Envia para| Router[br.hubpedro.infra.api.router.DefaultRouter]
+    Router -->|Busca Melhor Casamento de Rota| DefaultRouter
+    DefaultRouter -->|Extrai PathParams| Wrapper[br.hubpedro.infra.api.router.PathParamRequestWrapper]
+    Wrapper -->|Executa| Handler[br.hubpedro.contracts.RequestHandler]
+    Handler -->|Retorna| HttpResponse[br.hubpedro.infra.api.dto.Responses - Imutável]
+    HttpResponse -->|Escreve Bytes de Volta| Client
+```
+
+### Escaneamento de Controladores e Injeção de Parâmetros
+O escaneamento reflexivo automatizado faz o bind transparente dos parâmetros informados nas rotas para variáveis Java fortemente tipadas:
+```mermaid
+sequenceDiagram
+    participant App as Aplicação
+    participant Scanner as br.hubpedro.infra.api.router.ControllerScanner
+    participant Router as br.hubpedro.infra.api.router.DefaultRouter
+    participant Handler as br.hubpedro.infra.api.router.ReflectionMethodHandler
+    participant Converter as br.hubpedro.infra.api.router.ParameterConverter
+
+    App->>Scanner: registerController(router, new MyController())
+    Scanner->>Scanner: Analisa Métodos Anotados (@Get, @Post)
+    Scanner->>Router: addRoute(method, path, new ReflectionMethodHandler(...))
+    
+    Note over Router, Handler: No recebimento de uma requisição correspondente:
+    Router->>Handler: handle(HttpRequest)
+    loop Para cada parâmetro do método do Controller
+        alt Tem @Path("name")
+            Handler->>Converter: convertType(value, paramType)
+            Converter-->>Handler: Valor convertido (ex: int, double)
+        else Tem @Query("name")
+            Handler->>Converter: convertType(value, paramType)
+            Converter-->>Handler: Valor convertido (ex: String)
+        else Tipo é HttpRequest
+            Note over Handler: Injeta a requisição original diretamente
+        end
+    end
+    Handler->>App: Invoca método com argumentos mapeados (Reflection)
+    App-->>Handler: Retorna HttpResponse ou Objeto
+    Handler-->>Router: Retorna HttpResponse
+```
+
+---
+
+## ⚡ Como Usar o Framework
+
+### A. Modelo Declarativo (Recomendado)
+Crie classes normais de controle anotadas com `@Get` ou `@Post`. Os parâmetros são preenchidos automaticamente por meio de `@Path` e `@Query`.
+
+```java
+package br.hubpedro.controller;
+
+import br.hubpedro.contracts.HttpRequest;
+import br.hubpedro.contracts.HttpResponse;
+import br.hubpedro.contracts.annotations.Get;
+import br.hubpedro.contracts.annotations.Path;
+import br.hubpedro.contracts.annotations.Post;
+import br.hubpedro.contracts.annotations.Query;
+import br.hubpedro.infra.api.dto.Responses;
+
+public class UserController {
+
+    // 1. Endpoint com conversão implícita de tipos (Path e Query Params)
+    @Get("/users/{id}")
+    public HttpResponse getUser(@Path("id") int id, @Query("q") String query) {
+        return Responses.ok("Buscando usuário: " + id + " com o filtro: " + query);
+    }
+
+    // 2. Endpoint recebendo diretamente o objeto da requisição HTTP e corpo
+    @Post("/users")
+    public HttpResponse createUser(HttpRequest request) {
+        String body = request.getBody();
+        return Responses.builder()
+                .status(201)
+                .body("Usuário criado com sucesso! Payload: " + body)
+                .build();
+    }
+}
+```
+
+Para registrar o controlador no servidor:
+```java
+Router router = FastApi.newRouter();
+FastApi.registerController(router, new UserController());
+```
+
+---
+
+### B. Modelo Funcional (Estilo Micro-Framework)
+Você também pode declarar rotas diretamente na inicialização de sua aplicação usando expressivas lambdas:
+
+```java
+import br.hubpedro.contracts.Router;
+import br.hubpedro.infra.api.FastApi;
+import br.hubpedro.infra.api.dto.Responses;
+
+public class App {
+    public static void main(String[] args) {
+        Router router = FastApi.newRouter();
+
+        // Rota simples retornando HTML
+        router.get("/", request -> Responses.builder()
+                .status(200)
+                .header("Content-Type", "text/html; charset=UTF-8")
+                .body("<h1>🚀 FastAPI Java - Virtual Threads ativo!</h1>")
+                .build()
+        );
+
+        // Acesso a parâmetros de caminho e de busca
+        router.get("/items/{id}", request -> {
+            String itemId = request.getPathParams().get("id");
+            String filter = request.getQueryParams().getOrDefault("filter", "none");
+            return Responses.json(String.format("{\"id\": %s, \"filter\": \"%s\"}", itemId, filter));
+        });
+    }
+}
+```
+
+---
+
+## 📦 Como Inicializar e Subir o Servidor
+
+Veja o ciclo de vida completo no arquivo principal [Main.java](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/Main.java):
 
 ```java
 package br.hubpedro;
 
-import br.hubpedro.api.FastApi;
-import br.hubpedro.api.Responses;
 import br.hubpedro.contracts.HttpServer;
 import br.hubpedro.contracts.Router;
+import br.hubpedro.infra.api.FastApi;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("=== Inicializando o FastAPI-Java (Loom Sandbox) ===");
-
-        // 1. Instanciamos o roteador dinâmico através da fachada pública
+        // 1. Cria o roteador
         Router router = FastApi.newRouter();
 
-        // 2. Registramos os endpoints de forma declarativa e com respostas imutáveis
-        
-        // Rota Estática: Home (Retorna HTML)
-        router.get("/", request -> Responses.builder()
-                .status(200)
-                .header("Content-Type", "text/html; charset=UTF-8")
-                .body("<h1>🚀 FastAPI Java com Virtual Threads está rodando!</h1>")
-                .build()
-        );
+        // 2. Registra controladores anotados
+        FastApi.registerController(router, new MyController());
 
-        // Rota Dinâmica com Path Parameters e Query Parameters: /items/{id}
-        router.get("/items/{id}", request -> {
-            String id = request.getPathParams().get("id");
-            String q = request.getQueryParams().getOrDefault("q", "nenhum");
-            
-            // Geramos uma resposta JSON contendo dados da URL, Query e da Virtual Thread atual!
-            String jsonResponse = String.format(
-                    "{\n  \"item_id\": \"%s\",\n  \"query\": \"%s\",\n  \"executed_by_thread\": \"%s\"\n}",
-                    id, q, Thread.currentThread()
-            );
-
-            return Responses.json(jsonResponse);
-        });
-
-        // Rota POST com leitura segura de corpo (Body) em bytes: /items
-        router.post("/items", request -> {
-            String body = request.getBody();
-            
-            String jsonResponse = String.format(
-                    "{\n  \"message\": \"Item recebido e persistido com sucesso!\",\n  \"data\": %s,\n  \"executed_by_thread\": \"%s\"\n}",
-                    body.isBlank() ? "\"{}\"" : body, Thread.currentThread()
-            );
-
-            return Responses.builder()
-                    .status(201)
-                    .header("Content-Type", "application/json; charset=UTF-8")
-                    .body(jsonResponse)
-                    .build();
-        });
-
-        // 3. Inicializamos o servidor HTTP rodando com Virtual Threads na porta 8080
+        // 3. Inicializa o servidor HTTP na porta 8080 com suporte a Loom
         HttpServer server = FastApi.newServer(router);
-        
-        // Gancho para desligar o servidor graciosamente no encerramento da JVM
+
+        // 4. Configura Graceful Shutdown ao receber SIGTERM
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("\nEncerramento solicitado. Desligando o servidor...");
+            System.out.println("Solicitação de encerramento recebida. Finalizando conexões pendentes...");
             server.stop();
         }));
 
         server.start(8080);
-        
-        // Aguarda a terminação do servidor de forma limpa para manter a JVM ativa
         server.awaitTermination();
     }
 }
@@ -101,53 +206,48 @@ public class Main {
 
 ---
 
-## 🛠️ Suíte de Testes Confiável
+## 🛠️ Guia de Desenvolvimento e Execução
 
-Para assegurar que o framework seja robusto, desenvolvemos testes automatizados cobrindo três grandes frentes:
+### Pré-requisitos
+*   **Java 21** instalado e configurado nas variáveis de ambiente.
+*   **Maven 3.8+**.
 
-*   **`RouterTest`**: Valida a precedência de rotas (rotas estáticas registradas posteriormente sendo resolvidas antes de dinâmicas genéricas), escape de regex, exceções para registros duplicados, retorno correto de `405 Method Not Allowed` com cabeçalho `Allow` e injeção de parâmetros dinâmicos em qualquer implementação de request.
-*   **`HttpParserAndResponseTest`**: Testa o parser HTTP com corpos contendo emojis e acentos em UTF-8 usando a contagem exata de bytes, além de validar os limites máximos DoS para headers (8KB) e bodies (10MB), bem como a imutabilidade estrita dos mapas de cabeçalhos de resposta.
-*   **`ServerIntegrationTest`**: Um teste de integração real que levanta o servidor HTTP sob portas dinâmicas livres da máquina local e efetua chamadas reais de rede via conexões TCP manuais por sockets, assegurando o comportamento do pipeline completo.
+### Comandos Úteis
 
----
+> [!NOTE]
+> Todos os comandos a seguir devem ser executados no diretório raiz do projeto.
 
-## 🚀 Como Executar o Projeto
-
-Certifique-se de estar utilizando o **Java 21** ou superior em sua máquina.
-
-### Compilar o projeto
-```bash
-mvn clean compile
-```
-
-### Executar a suíte de testes
-```bash
-mvn test
-```
-
-### Rodar a aplicação de exemplo
-Basta executar a classe principal `br.hubpedro.Main`. Com o servidor rodando, abra o seu navegador e acesse:
-- Página inicial: [http://localhost:8080/](http://localhost:8080/)
-- Endpoint Dinâmico (Path e Query Params): [http://localhost:8080/items/42?q=computador](http://localhost:8080/items/42?q=computador)
+* **Compilar e buildar o projeto**:
+  ```bash
+  mvn clean compile
+  ```
+* **Executar a suite completa de testes automatizados**:
+  ```bash
+  mvn test
+  ```
+* **Rodar a aplicação de teste padrão**:
+  Execute a classe `br.hubpedro.Main` a partir de sua IDE preferida ou via comando:
+  ```bash
+  mvn exec:java -Dexec.mainClass="br.hubpedro.Main"
+  ```
 
 ---
 
-## 📦 Detalhes Técnicos de Infraestrutura (Ocultos ao Usuário)
+## 🏛️ Estrutura de Pastas e Componentes Chave
 
-Abaixo, a arquitetura interna que faz toda a mágica acontecer sob o capô:
-
-```mermaid
-graph TD
-    Client[Cliente HTTP] -->|Socket TCP| Server[br.hubpedro.infra.Server]
-    Server -->|Despacha Conexão| VirtualThread[Virtual Thread - Loom]
-    VirtualThread -->|Parsing de Bytes| HttpParser[br.hubpedro.infra.api.parser.HttpParser]
-    HttpParser -->|Gera HttpRequest| RequestDTO[br.hubpedro.infra.api.dto.HttpRequest]
-    RequestDTO -->|Envia para| Router[br.hubpedro.infra.api.router.DefaultRouter]
-    Router -->|Mapeia PathParams| Wrapper[br.hubpedro.infra.api.router.PathParamRequestWrapper]
-    Wrapper -->|Executa| Handler[br.hubpedro.contracts.RequestHandler]
-    Handler -->|Retorna| HttpResponse[br.hubpedro.api.Responses - Imutável]
-    HttpResponse -->|Escrita Bruta de Bytes| Client
-```
+*   **[`contracts`](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/contracts)**: Contratos públicos expostos de forma limpa.
+    *   `HttpRequest`: Interfaces imutáveis de requisição.
+    *   `HttpResponse`: Modelagem de respostas imutáveis com construtor fluente.
+    *   `Router` / `HttpServer`: Abstrações públicas de roteamento e runtime de rede.
+    *   [`annotations`](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/contracts/annotations): Anotações de controle e injeção (`@Get`, `@Post`, `@Path`, `@Query`).
+*   **[`infra`](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/infra)**: Implementação interna oculta ao desenvolvedor final.
+    *   `Server`: Loop TCP e concorrência baseada em Loom.
+    *   `parser`: Leitores de stream de bytes robustos para headers e payloads UTF-8.
+    *   `router`:
+        *   `DefaultRouter`: Casamento regex de rotas por precedência.
+        *   [ControllerScanner](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/infra/api/router/ControllerScanner.java): Motor de varredura reflexiva e mapeamento de anotações.
+        *   [ReflectionMethodHandler](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/infra/api/router/ReflectionMethodHandler.java): Proxy reflexivo para invocação inteligente de métodos.
+        *   `ParameterConverter`: Conversor seguro para tipos primitivos (`int`, `double`, `boolean`) e objetos comuns (`String`).
 
 ---
-Desenvolvido com carinho para explorar o futuro do desenvolvimento web leve em Java! 🚀💻
+Desenvolvido com foco em alta performance, clareza arquitetural e facilidade absoluta de desenvolvimento! 🚀💻
