@@ -6,6 +6,24 @@ Este projeto é uma biblioteca Java inovadora, inspirada diretamente na ergonomi
 
 ---
 
+## 🆕 Últimas Atualizações e Novidades
+
+O framework continua evoluindo! Veja as melhorias introduzidas recentemente:
+
+> [!IMPORTANT]
+> **1. Introdução do `RouterManager`**
+> Adicionamos uma nova camada gerenciadora flexível que simplifica o registro de rotas reflexivas e o gerenciamento de controladores. Ela encapsula o `DefaultRouter` e fornece o método nativo `.registerController(Object)` para um setup ainda mais dinâmico.
+
+> [!TIP]
+> **2. Padronização e Correção de Logging**
+> Corrigimos o import de logging na inicialização em [Main.java](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/Main.java) para usar a biblioteca padrão robusta `java.util.logging.Logger` (substituindo a antiga dependência problemática `System.Logger`), garantindo uma inicialização limpa e livre de falhas de compilação.
+
+> [!NOTE]
+> **3. Suite de Testes Ampliada**
+> Adicionamos testes de integração robustos como o `RouterManagerTest` e refatoramos testes existentes para assegurar 100% de estabilidade na conversão automática de parâmetros de caminho e busca (@Path e @Query).
+
+---
+
 ## 🧭 Princípios de Design e Arquitetura
 
 O framework foi projetado seguindo diretrizes rígidas de separação de conceitos, ergonomia e segurança concorrente:
@@ -248,6 +266,8 @@ public class Main {
         *   [ControllerScanner](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/infra/api/router/ControllerScanner.java): Motor de varredura reflexiva e mapeamento de anotações.
         *   [ReflectionMethodHandler](file:///c:/Users/pfbrodrigues/OneDrive/git/fastapi/fastapi/src/main/java/br/hubpedro/infra/api/router/ReflectionMethodHandler.java): Proxy reflexivo para invocação inteligente de métodos.
         *   `ParameterConverter`: Conversor seguro para tipos primitivos (`int`, `double`, `boolean`) e objetos comuns (`String`).
+        *   `RouterManager`: Wrapper delegante com suporte embutido a registro simplificado de controladores.
+        *   `RouteMetaData`: Modelo compilado de metadados regex para correspondência precisa de caminhos dinâmicos.
 
 ---
 Desenvolvido com foco em alta performance, clareza arquitetural e facilidade absoluta de desenvolvimento! 🚀💻
