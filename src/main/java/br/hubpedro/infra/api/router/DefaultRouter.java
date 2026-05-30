@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Implementação thread-safe do roteador dinâmico do framework.
@@ -22,6 +24,8 @@ import java.util.regex.Pattern;
  * conflitos/duplicatas de rotas.
  */
 public class DefaultRouter implements Router {
+
+    private static final Logger LOGGER = Logger.getLogger(DefaultRouter.class.getName());
 
     private final List<Route> routes = new CopyOnWriteArrayList<>();
 
@@ -48,7 +52,7 @@ public class DefaultRouter implements Router {
         // Ordena por especificidade (estática antes de dinâmica)
         routes.sort(DefaultRouter::compareRoutes);
 
-        System.out.println("Rota registrada e compilada: [" + normalizedMethod + "] " + normalizedUrl);
+        LOGGER.info("Rota registrada e compilada: [" + normalizedMethod + "] " + normalizedUrl);
     }
 
     @Override
@@ -73,8 +77,7 @@ public class DefaultRouter implements Router {
                     try {
                         return route.getHandler().handle(wrappedRequest);
                     } catch (Exception e) {
-                        System.err.println(
-                                "Erro durante execução da rota [" + method + "] " + path + ": " + e.getMessage());
+                        LOGGER.log(Level.SEVERE, "Erro durante execução da rota [" + method + "] " + path, e);
                         return Responses.builder()
                                 .status(500)
                                 .body("Internal Server Error")

@@ -5,5 +5,6 @@
     "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
     "editor.codeActions.triggerOnFocusChange": true,
     "editor.experimentalGpuAcceleration": "on",
-    "editor.formatOnSave": false
+    "editor.formatOnSave": false,
+    "java.compile.nullAnalysis.mode": "automatic"
 }
