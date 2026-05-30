@@ -7,8 +7,11 @@ import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 
 public final class ControllerScanner {
+
+    private static final Logger LOGGER = Logger.getLogger(ControllerScanner.class.getName());
 
     @FunctionalInterface
     interface RouteAction {
@@ -24,7 +27,7 @@ public final class ControllerScanner {
                 Get getAnn = method.getAnnotation(Get.class);
                 String path = getAnn.value();
                 router.addRoute("GET", path, new ReflectionMethodHandler(controller, method));
-                System.out.println("Controlador registrado [GET]: " + path + " -> " + controller.getClass().getSimpleName() + "." + method.getName());
+                LOGGER.info("Controlador registrado [GET]: " + path + " -> " + controller.getClass().getSimpleName() + "." + method.getName());
             }
         );
 
@@ -34,7 +37,7 @@ public final class ControllerScanner {
                 Post postAnn = method.getAnnotation(Post.class);
                 String path = postAnn.value();
                 router.addRoute("POST", path, new ReflectionMethodHandler(controller, method));
-                System.out.println("Controlador registrado [POST]: " + path + " -> " + controller.getClass().getSimpleName() + "." + method.getName());
+                LOGGER.info("Controlador registrado [POST]: " + path + " -> " + controller.getClass().getSimpleName() + "." + method.getName());
             }
         );
     }

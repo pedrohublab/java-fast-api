@@ -5,13 +5,17 @@ import br.hubpedro.contracts.Router;
 import br.hubpedro.infra.api.FastApi;
 import br.hubpedro.infra.api.dto.Responses;
 
+import java.util.logging.Logger;
+
 /**
  * Exemplo de uso da biblioteca FastAPI-like em Java.
  * Esta classe utiliza estritamente a API pública sem vazar pacotes internos de infraestrutura.
  */
 public class Main {
+    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
     public static void main(String[] args) {
-        System.out.println("=== Inicializando o FastAPI-Java (Loom Sandbox) ===");
+        LOGGER.info("=== Inicializando o FastAPI-Java (Loom Sandbox) ===");
 
         // 1. Instanciamos o roteador dinâmico através da fachada pública
         Router router = FastApi.newRouter();
@@ -62,7 +66,7 @@ public class Main {
         
         // Gancho para desligar o servidor graciosamente no encerramento da JVM
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("\nEncerramento solicitado. Desligando o servidor...");
+            LOGGER.info("Encerramento solicitado. Desligando o servidor...");
             server.stop();
         }));
 
