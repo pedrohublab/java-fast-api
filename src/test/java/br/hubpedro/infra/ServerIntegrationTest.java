@@ -1,9 +1,10 @@
 package br.hubpedro.infra;
 
-import br.hubpedro.api.FastApi;
-import br.hubpedro.api.Responses;
 import br.hubpedro.contracts.HttpServer;
 import br.hubpedro.contracts.Router;
+import br.hubpedro.infra.api.FastApi;
+import br.hubpedro.infra.api.dto.Responses;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

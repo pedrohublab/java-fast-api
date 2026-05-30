@@ -1,9 +1,9 @@
 package br.hubpedro;
 
-import br.hubpedro.api.FastApi;
-import br.hubpedro.api.Responses;
 import br.hubpedro.contracts.HttpServer;
 import br.hubpedro.contracts.Router;
+import br.hubpedro.infra.api.FastApi;
+import br.hubpedro.infra.api.dto.Responses;
 
 /**
  * Exemplo de uso da biblioteca FastAPI-like em Java.

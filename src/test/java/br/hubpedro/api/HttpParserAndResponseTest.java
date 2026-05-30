@@ -2,13 +2,13 @@ package br.hubpedro.api;
 
 import br.hubpedro.contracts.HttpRequest;
 import br.hubpedro.contracts.HttpResponse;
+import br.hubpedro.infra.api.dto.Responses;
 import br.hubpedro.infra.api.parser.HttpParser;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 

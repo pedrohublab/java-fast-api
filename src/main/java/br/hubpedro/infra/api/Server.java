@@ -1,10 +1,10 @@
-package br.hubpedro.infra;
+package br.hubpedro.infra.api;
 
-import br.hubpedro.api.Responses;
 import br.hubpedro.contracts.HttpServer;
 import br.hubpedro.contracts.Router;
 import br.hubpedro.contracts.HttpRequest;
 import br.hubpedro.contracts.HttpResponse;
+import br.hubpedro.infra.api.dto.Responses;
 import br.hubpedro.infra.api.parser.HttpParser;
 
 import java.io.IOException;

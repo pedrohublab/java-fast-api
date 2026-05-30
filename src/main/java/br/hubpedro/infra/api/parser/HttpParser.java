@@ -1,7 +1,6 @@
 package br.hubpedro.infra.api.parser;
 
 import br.hubpedro.contracts.HttpRequest;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -11,9 +10,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Utilitário responsável por fazer o parsing de um InputStream de socket HTTP bruto
+ * Utilitário responsável por fazer o parsing de um InputStream de socket HTTP
+ * bruto
  * e convertê-lo em uma instância de br.hubpedro.infra.api.dto.HttpRequest.
- * Faz a leitura precisa por bytes (e não por caracteres) para evitar truncamento ou
+ * Faz a leitura precisa por bytes (e não por caracteres) para evitar
+ * truncamento ou
  * travamento ao ler corpos codificados em UTF-8 com acentos/emojis.
  */
 public class HttpParser {
@@ -22,47 +23,17 @@ public class HttpParser {
     private static final int MAX_BODY_SIZE = 10 * 1024 * 1024; // Limite de 10MB para corpo (Prevenção DoS)
 
     /**
-     * Faz o parsing da requisição HTTP vinda do cliente a partir do fluxo de bytes brutos.
+     * Faz o parsing da requisição HTTP vinda do cliente a partir do fluxo de bytes
+     * brutos.
      *
      * @param inputStream o fluxo de entrada do socket do cliente
      * @return um objeto HttpRequest totalmente preenchido
-     * @throws IOException caso ocorra algum erro na leitura ou a requisição seja inválida/exceda limites
+     * @throws IOException caso ocorra algum erro na leitura ou a requisição seja
+     *                     inválida/exceda limites
      */
     public static HttpRequest parse(InputStream inputStream) throws IOException {
-        // 1. Ler os cabeçalhos até o divisor \r\n\r\n ou \n\n baseando-se estritamente em bytes
-        ByteArrayOutputStream headerStream = new ByteArrayOutputStream();
-        int b;
-        int state = 0; // Estado: 0 = normal, 1 = \r, 2 = \r\n, 3 = \r\n\r
-
-        while ((b = inputStream.read()) != -1) {
-            headerStream.write(b);
-            if (state == 0) {
-                if (b == '\r') state = 1;
-                else if (b == '\n') state = 2;
-            } else if (state == 1) {
-                if (b == '\n') state = 2;
-                else if (b == '\r') state = 1;
-                else state = 0;
-            } else if (state == 2) {
-                if (b == '\r') state = 3;
-                else if (b == '\n') break; // Encontrou \n\n
-                else state = 0;
-            } else if (state == 3) {
-                if (b == '\n') break; // Encontrou \r\n\r\n
-                else if (b == '\r') state = 1;
-                else state = 0;
-            }
-
-            if (headerStream.size() > MAX_HEADER_SIZE) {
-                throw new IOException("Cabeçalhos excederam o limite máximo de " + (MAX_HEADER_SIZE / 1024) + "KB.");
-            }
-        }
-
-        if (headerStream.size() == 0) {
-            throw new IOException("Requisição HTTP vazia ou fluxo encerrado abruptamente.");
-        }
-
-        String headersText = headerStream.toString(StandardCharsets.UTF_8);
+        // 1. Ler os cabeçalhos de forma segura usando o leitor dedicado de bytes
+        String headersText = HttpHeaderReader.readHeaders(inputStream, MAX_HEADER_SIZE);
         String[] lines = headersText.split("\\r?\\n");
 
         if (lines.length == 0 || lines[0].isBlank()) {
@@ -113,14 +84,16 @@ public class HttpParser {
             }
         }
 
-        // 3. Ler o corpo (body) consumindo exatamente o tamanho em bytes indicado por Content-Length
+        // 3. Ler o corpo (body) consumindo exatamente o tamanho em bytes indicado por
+        // Content-Length
         String body = "";
         String contentLengthHeader = headers.get("content-length");
         if (contentLengthHeader != null) {
             try {
                 int contentLength = Integer.parseInt(contentLengthHeader.trim());
                 if (contentLength > MAX_BODY_SIZE) {
-                    throw new IOException("Corpo da requisição excede o limite máximo permitido de " + (MAX_BODY_SIZE / 1024 / 1024) + "MB.");
+                    throw new IOException("Corpo da requisição excede o limite máximo permitido de "
+                            + (MAX_BODY_SIZE / 1024 / 1024) + "MB.");
                 }
                 if (contentLength > 0) {
                     byte[] bodyBytes = new byte[contentLength];
@@ -148,7 +121,6 @@ public class HttpParser {
                 headers,
                 queryParams,
                 pathParams,
-                body
-        );
+                body);
     }
 }

@@ -1,8 +1,8 @@
-package br.hubpedro.api;
+package br.hubpedro.infra.api;
 
 import br.hubpedro.contracts.HttpServer;
 import br.hubpedro.contracts.Router;
-import br.hubpedro.infra.Server;
+import br.hubpedro.infra.api.router.ControllerScanner;
 import br.hubpedro.infra.api.router.DefaultRouter;
 
 /**
@@ -32,5 +32,9 @@ public final class FastApi {
      */
     public static HttpServer newServer(Router router) {
         return new Server(router);
+    }
+
+    public static void registerController(Router router, Object controller) {
+        ControllerScanner.scanAndRegister(router, controller);
     }
 }

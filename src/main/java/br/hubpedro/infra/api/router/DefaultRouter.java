@@ -1,10 +1,10 @@
 package br.hubpedro.infra.api.router;
 
-import br.hubpedro.api.Responses;
 import br.hubpedro.contracts.HttpRequest;
 import br.hubpedro.contracts.HttpResponse;
 import br.hubpedro.contracts.RequestHandler;
 import br.hubpedro.contracts.Router;
+import br.hubpedro.infra.api.dto.Responses;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,8 +16,10 @@ import java.util.regex.Pattern;
 
 /**
  * Implementação thread-safe do roteador dinâmico do framework.
- * Suporta parâmetros de caminho, escape de literais regex, ordenação por especificidade de segmento,
- * tratamento de erros HTTP 405 com o cabeçalho Allow e detecção de conflitos/duplicatas de rotas.
+ * Suporta parâmetros de caminho, escape de literais regex, ordenação por
+ * especificidade de segmento,
+ * tratamento de erros HTTP 405 com o cabeçalho Allow e detecção de
+ * conflitos/duplicatas de rotas.
  */
 public class DefaultRouter implements Router {
 
@@ -34,8 +36,10 @@ public class DefaultRouter implements Router {
 
         // Detecção de duplicatas/conflitos
         for (Route route : routes) {
-            if (route.getMethod().equalsIgnoreCase(normalizedMethod) && route.getOriginalPattern().equals(normalizedUrl)) {
-                throw new IllegalArgumentException("Rota duplicada detectada: [" + normalizedMethod + "] " + normalizedUrl);
+            if (route.getMethod().equalsIgnoreCase(normalizedMethod)
+                    && route.getOriginalPattern().equals(normalizedUrl)) {
+                throw new IllegalArgumentException(
+                        "Rota duplicada detectada: [" + normalizedMethod + "] " + normalizedUrl);
             }
         }
 
@@ -69,7 +73,8 @@ public class DefaultRouter implements Router {
                     try {
                         return route.getHandler().handle(wrappedRequest);
                     } catch (Exception e) {
-                        System.err.println("Erro durante execução da rota [" + method + "] " + path + ": " + e.getMessage());
+                        System.err.println(
+                                "Erro durante execução da rota [" + method + "] " + path + ": " + e.getMessage());
                         return Responses.builder()
                                 .status(500)
                                 .body("Internal Server Error")
@@ -100,7 +105,8 @@ public class DefaultRouter implements Router {
 
     /**
      * Compara duas rotas segment-by-segment para definir a precedência.
-     * Rotas estáticas (sem chaves '{}') são priorizadas em relação a rotas dinâmicas.
+     * Rotas estáticas (sem chaves '{}') são priorizadas em relação a rotas
+     * dinâmicas.
      */
     private static int compareRoutes(Route r1, Route r2) {
         String[] s1 = r1.getOriginalPattern().split("/");
@@ -117,7 +123,8 @@ public class DefaultRouter implements Router {
             }
         }
 
-        // Se são estruturalmente idênticos até o limite, caminhos mais longos vêm primeiro
+        // Se são estruturalmente idênticos até o limite, caminhos mais longos vêm
+        // primeiro
         return Integer.compare(s2.length, s1.length);
     }
 

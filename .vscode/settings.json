@@ -1,0 +1,9 @@
+{
+    "files.autoSave": "afterDelay",
+    "editor.autoClosingBrackets": "always",
+    "editor.autoIndentOnPaste": true,
+    "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+    "editor.codeActions.triggerOnFocusChange": true,
+    "editor.experimentalGpuAcceleration": "on",
+    "editor.formatOnSave": false
+}

@@ -1,4 +1,4 @@
-package br.hubpedro.api;
+package br.hubpedro.infra.api.dto;
 
 import br.hubpedro.contracts.HttpResponse;
 import java.util.HashMap;

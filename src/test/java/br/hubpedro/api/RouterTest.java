@@ -3,6 +3,9 @@ package br.hubpedro.api;
 import br.hubpedro.contracts.HttpRequest;
 import br.hubpedro.contracts.HttpResponse;
 import br.hubpedro.contracts.Router;
+import br.hubpedro.infra.api.FastApi;
+import br.hubpedro.infra.api.dto.Responses;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
