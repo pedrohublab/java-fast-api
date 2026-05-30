@@ -62,7 +62,7 @@ public class ReflectionMethodHandler implements RequestHandler {
             return br.hubpedro.infra.api.dto.Responses.status(200);
 
         } catch (IllegalArgumentException e) {
-            return HttpResponse.json(400, "{\"error\": \"" + e.getMessage() + "\"}");
+            return HttpResponse.json(400, "{\"error\": \"Bad Request\"}");
         } catch (java.lang.reflect.InvocationTargetException e) {
             Throwable cause = e.getCause();
             if (cause instanceof Exception exceptionCause) {
@@ -70,7 +70,7 @@ public class ReflectionMethodHandler implements RequestHandler {
             }
             throw new RuntimeException(cause);
         } catch (Exception e) {
-            return HttpResponse.json(500, "{\"error\": \"" + e.getMessage() + "\"}");
+            return HttpResponse.json(500, "{\"error\": \"Internal Server Error\"}");
         }
     }
 }
