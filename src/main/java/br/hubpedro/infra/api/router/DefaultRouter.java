@@ -185,10 +185,17 @@ public class DefaultRouter implements Router {
         }
 
         public boolean matchesPath(String requestPath) {
+            // Fast path para rotas estáticas: comparações de String diretas evitam overhead de Regex (Otimização de Performance)
+            if (paramNames.isEmpty()) {
+                return originalPattern.equals(requestPath);
+            }
             return this.pathPattern.matcher(requestPath).matches();
         }
 
         public Map<String, String> extractPathParams(String requestPath) {
+            if (paramNames.isEmpty()) {
+                return Map.of();
+            }
             Map<String, String> params = new HashMap<>();
             Matcher matcher = this.pathPattern.matcher(requestPath);
             if (matcher.matches()) {
