@@ -7,7 +7,9 @@ import br.hubpedro.contracts.HttpResponse;
 import br.hubpedro.infra.api.dto.Responses;
 import br.hubpedro.infra.api.parser.HttpParser;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -151,12 +153,14 @@ public class Server implements HttpServer {
 
     private void handleClient(Socket clientSocket) {
         try (clientSocket;
+             InputStream in = new BufferedInputStream(clientSocket.getInputStream());
              OutputStream out = clientSocket.getOutputStream()) {
 
             // 1. Faz o parsing do fluxo de bytes da requisição
             HttpRequest request;
             try {
-                request = HttpParser.parse(clientSocket.getInputStream());
+                // Bufferize the InputStream to dramatically reduce system calls during byte-by-byte header parsing
+                request = HttpParser.parse(in);
             } catch (Exception e) {
                 // Loga internamente o erro de parser, mas não vaza a stack trace para o cliente
                 LOGGER.log(Level.SEVERE, "Erro de parsing HTTP", e);

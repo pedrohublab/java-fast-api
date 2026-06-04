@@ -1,0 +1,3 @@
+## 2026-06-03 - [FastAPI-Java Socket Read Performance]
+**Learning:** Calling `InputStream.read()` byte-by-byte on a raw `Socket`'s `InputStream` causes extreme performance degradation (e.g., millions of nanoseconds) because each byte read translates to a system call. In this codebase, the HTTP header parser reads bytes sequentially to handle UTF-8 boundaries securely, which was a huge bottleneck.
+**Action:** Always wrap `Socket.getInputStream()` with a `BufferedInputStream` before passing it to stream-based byte parsers to read chunks into memory and dramatically cut down I/O syscall overhead.
