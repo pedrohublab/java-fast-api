@@ -64,11 +64,12 @@ public class DefaultRouter implements Router {
         List<String> allowedMethods = new ArrayList<>();
 
         for (Route route : routes) {
-            if (route.matchesPath(path)) {
+            Matcher matcher = route.match(path);
+            if (matcher.matches()) {
                 pathMatchedAnyRoute = true;
                 if (route.getMethod().equalsIgnoreCase(method)) {
-                    // 1. Extraímos os parâmetros dinâmicos da URL
-                    Map<String, String> pathParams = route.extractPathParams(path);
+                    // 1. Extraímos os parâmetros dinâmicos da URL aproveitando o matcher já avaliado
+                    Map<String, String> pathParams = route.extractPathParams(matcher);
 
                     // 2. Injeta universalmente os pathParams através do PathParamRequestWrapper
                     HttpRequest wrappedRequest = new PathParamRequestWrapper(request, pathParams);
@@ -184,17 +185,15 @@ public class DefaultRouter implements Router {
             return handler;
         }
 
-        public boolean matchesPath(String requestPath) {
-            return this.pathPattern.matcher(requestPath).matches();
+        public Matcher match(String requestPath) {
+            return this.pathPattern.matcher(requestPath);
         }
 
-        public Map<String, String> extractPathParams(String requestPath) {
+        public Map<String, String> extractPathParams(Matcher matcher) {
             Map<String, String> params = new HashMap<>();
-            Matcher matcher = this.pathPattern.matcher(requestPath);
-            if (matcher.matches()) {
-                for (String paramName : paramNames) {
-                    params.put(paramName, matcher.group(paramName));
-                }
+            // Assume que matcher.matches() já foi chamado e retornou true
+            for (String paramName : paramNames) {
+                params.put(paramName, matcher.group(paramName));
             }
             return params;
         }

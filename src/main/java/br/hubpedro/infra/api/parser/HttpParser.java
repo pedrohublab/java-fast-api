@@ -8,6 +8,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Utilitário responsável por fazer o parsing de um InputStream de socket HTTP
@@ -21,6 +22,7 @@ public class HttpParser {
 
     private static final int MAX_HEADER_SIZE = 8192; // Limite de 8KB para cabeçalhos (Prevenção DoS)
     private static final int MAX_BODY_SIZE = 10 * 1024 * 1024; // Limite de 10MB para corpo (Prevenção DoS)
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
     private static String[] splitLines(String text) {
         if (text.isEmpty()) {
@@ -71,7 +73,7 @@ public class HttpParser {
 
         // 2. Parsear a Request Line (Ex: GET /items/5?q=teste HTTP/1.1)
         String requestLine = lines[0];
-        String[] parts = requestLine.split("\\s+");
+        String[] parts = WHITESPACE_PATTERN.split(requestLine);
         if (parts.length < 3) {
             throw new IOException("Request Line malformatada: " + requestLine);
         }

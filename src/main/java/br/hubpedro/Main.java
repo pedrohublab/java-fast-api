@@ -22,8 +22,6 @@ public class Main {
         // 1. Instanciamos o roteador dinâmico através da fachada pública
         Router router = FastApi.newRouter();
 
-        FastApi.registerController(router, new XPTOController());
-
         HttpServer server = FastApi.newServer(router);
         
         // Gancho para desligar o servidor graciosamente no encerramento da JVM
