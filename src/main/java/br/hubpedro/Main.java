@@ -6,7 +6,6 @@ import java.util.logging.Logger;
 
 import br.hubpedro.contracts.HttpServer;
 import br.hubpedro.infra.api.FastApi;
-import br.hubpedro.infra.api.dto.Responses;
 
 
 /**
@@ -21,8 +20,6 @@ public class Main {
 
         // 1. Instanciamos o roteador dinâmico através da fachada pública
         Router router = FastApi.newRouter();
-
-        FastApi.registerController(router, new XPTOController());
 
         HttpServer server = FastApi.newServer(router);
         
