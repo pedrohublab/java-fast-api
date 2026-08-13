@@ -135,6 +135,8 @@ public class DefaultRouter implements Router {
      * Representação interna de uma rota compilada.
      */
     private static class Route {
+        private static final Pattern PARAM_PATTERN = Pattern.compile("\\{([a-zA-Z0-9_]+)\\}");
+
         private final String method;
         private final String originalPattern;
         private final Pattern pathPattern;
@@ -149,7 +151,7 @@ public class DefaultRouter implements Router {
 
             // Analisa e compila a expressão regular escapando os literais
             StringBuilder regexBuilder = new StringBuilder("^");
-            Matcher matcher = Pattern.compile("\\{([a-zA-Z0-9_]+)\\}").matcher(urlPattern);
+            Matcher matcher = PARAM_PATTERN.matcher(urlPattern);
             int lastEnd = 0;
 
             while (matcher.find()) {
